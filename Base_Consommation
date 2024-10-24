@@ -1,0 +1,34 @@
+let
+    Source = Export_Conso_PBI_AM,
+    #"Fonction Domaine" = Table.AddColumn(Source, "Domaine_maj", each MàjDomaine([Domaine])),
+    #"Colonnes supprimées" = Table.RemoveColumns(#"Fonction Domaine",{"Domaine"}),
+    #"Colonnes renommées1" = Table.RenameColumns(#"Colonnes supprimées",{{"Domaine_maj", "Domaine"}}),
+    #"Fonction Entite" = Table.AddColumn(#"Colonnes renommées1", "Entite_màj", each MàjEntité([Entite])),
+    #"Colonnes supprimées1" = Table.RemoveColumns(#"Fonction Entite",{"Entite"}),
+    #"Colonnes renommées" = Table.RenameColumns(#"Colonnes supprimées1",{{"Entite_màj", "Entite"}}),
+   
+
+    #"Requêtes fusionnées" = Table.NestedJoin(#"Colonnes renommées", {"code"}, Base_Informations_Type, {"Nom_Projet"}, "Base_Informations_Type", JoinKind.LeftOuter),
+    #"Base_Informations_Type développé" = Table.ExpandTableColumn(#"Requêtes fusionnées", "Base_Informations_Type", {"Type", "Programme"}, {"Type", "Programme"}),
+    #"Type modifié1" = Table.TransformColumnTypes(#"Base_Informations_Type développé",{{"Consommé Métier", type number}}),
+    #"Replace Int / Ext" = Table.ReplaceValue(#"Type modifié1"," Interne","Interne",Replacer.ReplaceText,{"Profil"}),
+    #"Valeur remplacée1" = Table.ReplaceValue(#"Replace Int / Ext"," Externe","Externe",Replacer.ReplaceText,{"Profil"}),
+    #"Valeur remplacée" = Table.ReplaceValue(#"Valeur remplacée1",null,"Interne",Replacer.ReplaceValue,{"Profil"}),
+    #"Type modifié2" = Table.TransformColumnTypes(#"Valeur remplacée",{{"Consommé_NET", type number}}),
+    #"BUDGET ALLOUÉ" = Table.AddColumn(#"Type modifié2", "Budget Alloué", each if [Domaine] = "Offre" then 19000
+else if [Domaine] = "Indemnisation" then 14000
+else if [Domaine] = "Expérience Client" then 12000
+else if [Domaine] = "OMS" then 9600
+else if [Domaine] = "Réglementaire" then 8500
+else if [Domaine] = "Data" then 6400
+else if [Domaine] = "Cardif IARD" then 6000
+else if [Domaine] = "IT3D" then 5000
+else if [Domaine] = "MGEFI" then 4000
+else if [Domaine] = "QDD" then 3000 else 0),
+    #"Type modifié4" = Table.TransformColumnTypes(#"BUDGET ALLOUÉ",{{"Budget Alloué", Int64.Type}}),
+    #"Duplication de la colonne" = Table.DuplicateColumn(#"Type modifié4", "Date_arretee", "Date_arretee - Copier"),
+    #"Début de mois calculé" = Table.TransformColumns(#"Duplication de la colonne",{{"Date_arretee - Copier", Date.StartOfMonth, type date}}),
+    #"Type modifié5" = Table.TransformColumnTypes(#"Début de mois calculé",{{"Date_arretee", type date}}),
+    #"Valeur remplacée2" = Table.ReplaceValue(#"Type modifié5",null,0,Replacer.ReplaceValue,{"Consommé Métier"})
+in
+    #"Valeur remplacée2"
