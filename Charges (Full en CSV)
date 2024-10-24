@@ -1,0 +1,27 @@
+let
+    Source = Folder.Files( Chemin & Dossier_AM & "\Sortant\" & Dossier_AM &"\Charge"),
+    #"Fichiers masqués filtrés1" = Table.SelectRows(Source, each [Attributes]?[Hidden]? <> true),
+    #"Appeler une fonction personnalisée1" = Table.AddColumn(#"Fichiers masqués filtrés1", "Transformer le fichier", each #"Transformer le fichier"([Content])),
+    #"Colonnes renommées1" = Table.RenameColumns(#"Appeler une fonction personnalisée1", {"Name", "Source.Name"}),
+    #"Autres colonnes supprimées1" = Table.SelectColumns(#"Colonnes renommées1", {"Source.Name", "Transformer le fichier"}),
+    #"Colonne de tables développée1" = Table.ExpandTableColumn(#"Autres colonnes supprimées1", "Transformer le fichier", Table.ColumnNames(#"Transformer le fichier"(#"Exemple de fichier"))),
+    #"Lignes filtrées" = Table.SelectRows(#"Colonne de tables développée1", each not Text.Contains([ID TRISKELL], "Template")),
+    #"Valeur remplacée" = Table.ReplaceValue(#"Lignes filtrées",".",",",Replacer.ReplaceText,{" Chiffrage Global"}),
+    #"Type modifié" = Table.TransformColumnTypes(#"Valeur remplacée",{{" Chiffrage Global", type number}}),
+    #"Valeur remplacée1" = Table.ReplaceValue(#"Type modifié",".",",",Replacer.ReplaceText,{"Charge initial"}),
+    #"Type modifié1" = Table.TransformColumnTypes(#"Valeur remplacée1",{{"Charge initial", type number}}),
+    #"Valeur remplacée2" = Table.ReplaceValue(#"Type modifié1",".",",",Replacer.ReplaceText,{"Charge Référente"}),
+    #"Type modifié2" = Table.TransformColumnTypes(#"Valeur remplacée2",{{"Charge Référente", type number}}),
+    #"Valeur remplacée3" = Table.ReplaceValue(#"Type modifié2",".",",",Replacer.ReplaceText,{"CGA"}),
+    #"Type modifié3" = Table.TransformColumnTypes(#"Valeur remplacée3",{{"CGA", type number}}),
+    #"Valeur remplacée4" = Table.ReplaceValue(#"Type modifié3",".",",",Replacer.ReplaceText,{"CGA_Triskell"}),
+    #"Type modifié4" = Table.TransformColumnTypes(#"Valeur remplacée4",{{"CGA_Triskell", type number}}),
+    #"Fractionner la colonne par délimiteur" = Table.SplitColumn(#"Type modifié4", "Date_arretee", Splitter.SplitTextByDelimiter(" ", QuoteStyle.Csv), {"Date_arretee.1", "Date_arretee.2"}),
+    #"Type modifié5" = Table.TransformColumnTypes(#"Fractionner la colonne par délimiteur",{{"Date_arretee.1", type date}, {"Date_arretee.2", type time}}),
+    #"Fractionner la colonne par délimiteur1" = Table.SplitColumn(#"Type modifié5", "Exercice", Splitter.SplitTextByDelimiter(" ", QuoteStyle.Csv), {"Exercice.1", "Exercice.2"}),
+    #"Type modifié6" = Table.TransformColumnTypes(#"Fractionner la colonne par délimiteur1",{{"Exercice.1", type date}, {"Exercice.2", type time}}),
+    #"Colonnes supprimées" = Table.RemoveColumns(#"Type modifié6",{"Date_arretee.2", "Exercice.2"}),
+    #"Type modifié7" = Table.TransformColumnTypes(#"Colonnes supprimées",{{"Date_arretee.1", type date}, {"Exercice.1", type date}}),
+    #"Colonnes renommées" = Table.RenameColumns(#"Type modifié7",{{"Date_arretee.1", "Date_arretee"}, {"Exercice.1", "Exercice"}})
+in
+    #"Colonnes renommées"
