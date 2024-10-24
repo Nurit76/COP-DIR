@@ -1,0 +1,14 @@
+let
+    Source = #"Charge (full en CSV)",
+    #"Lignes triées" = Table.Sort(Source,{{"Date_arretee", Order.Descending}}),
+   // #"Remplace Services Transverses" = Table.ReplaceValue(#"Colonnes renommées","TRANSVERSE","Services Transverses",Replacer.ReplaceText,{"Entite"}),
+   #"Type modifié" = Table.TransformColumnTypes(#"Lignes triées",{{"Exercice", type date}, {"Date_arretee", type date}}), 
+
+    #"Fonction Entite" = Table.AddColumn(#"Type modifié", "Entite_màj", each MàjEntité([Entite])),
+    #"Colonnes supprimées" = Table.RemoveColumns(#"Fonction Entite",{"Entite"}),
+    #"Colonnes renommées" = Table.RenameColumns(#"Colonnes supprimées",{{"Entite_màj", "Entite"}}),
+    #"Requêtes fusionnées" = Table.NestedJoin(#"Colonnes renommées", {"ID TRISKELL"}, Base_Informations_Type, {"Nom_Projet"}, "Base_Informations_Type", JoinKind.LeftOuter),
+    #"Base_Informations_Type développé" = Table.ExpandTableColumn(#"Requêtes fusionnées", "Base_Informations_Type", {"Programme"}, {"Programme"}),
+    #"Lignes filtrées" = Table.SelectRows(#"Base_Informations_Type développé", each true)
+in
+    #"Lignes filtrées"
